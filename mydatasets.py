@@ -35,18 +35,28 @@ class MR(data.Dataset):
 
         if examples is None:
             examples = []
+
             with open(os.path.join('./data', path), encoding="utf-8") as f:
                 for line in f.readlines():
-                    if line[-2] == '0':
-                        examples += [data.Example.fromlist([line[:line.find('|')], 'snegative'], fields)]
-                    elif line[-2] == '1':
-                        examples += [data.Example.fromlist([line[:line.find('|')], 'wnegative'], fields)]
-                    elif line[-2] == '2':
-                        examples += [data.Example.fromlist([line[:line.find('|')], 'neutral'], fields)]
-                    elif line[-2] == '3':
-                        examples += [data.Example.fromlist([line[:line.find('|')], 'wpositive'], fields)]
-                    elif line[-2] == '4':
-                        examples += [data.Example.fromlist([line[:line.find('|')], 'spositive'], fields)]
+                    if line[-2] == '0' or line[-2] == '1':
+                        examples += [
+                            data.Example.fromlist([line[:line.find('|')], 'negative'], fields)]
+                    elif line[-2] == '3' or line[-2] == '4':
+                        examples += [
+                            data.Example.fromlist([line[:line.find('|')], 'positive'], fields)]
+
+            # with open(os.path.join('./data', path), encoding="utf-8") as f:
+            #     for line in f.readlines():
+            #         if line[-2] == '0':
+            #             examples += [data.Example.fromlist([line[:line.find('|')], 'snegative'], fields)]
+            #         elif line[-2] == '1':
+            #             examples += [data.Example.fromlist([line[:line.find('|')], 'wnegative'], fields)]
+            #         elif line[-2] == '2':
+            #             examples += [data.Example.fromlist([line[:line.find('|')], 'neutral'], fields)]
+            #         elif line[-2] == '3':
+            #             examples += [data.Example.fromlist([line[:line.find('|')], 'wpositive'], fields)]
+            #         elif line[-2] == '4':
+            #             examples += [data.Example.fromlist([line[:line.find('|')], 'spositive'], fields)]
         super(MR, self).__init__(examples, fields, **kwargs)
 
     @classmethod

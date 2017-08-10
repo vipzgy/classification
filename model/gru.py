@@ -7,10 +7,10 @@ from torch.autograd import Variable
 torch.manual_seed(66)
 
 
-class LSTM_Text(nn.Module):
+class GRU(nn.Module):
     
     def __init__(self, args, m_embedding):
-        super(LSTM_Text, self).__init__()
+        super(GRU, self).__init__()
         self.args = args
 
         self.embed = nn.Embedding(args.embed_num, args.embed_dim)
@@ -24,12 +24,12 @@ class LSTM_Text(nn.Module):
     def forward(self, x, hidden):
         x = self.embed(x)
         x = self.dropout(x)
+
         x, lstm_h = self.gru(x, hidden)
 
         x = F.tanh(torch.transpose(x, 1, 2))
         x = F.max_pool1d(x, x.size(2)).squeeze(2)
         x = self.linearOut(x)
-
         return x, lstm_h
 
     def init_hidden(self, batch):
