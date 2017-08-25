@@ -18,36 +18,37 @@ torch.manual_seed(66)
 
 parser = argparse.ArgumentParser(description='classificer')
 # learning
-parser.add_argument('-lr', type=float, default=0.002)
+parser.add_argument('-lr', type=float, default=0.001)
 parser.add_argument('-epochs', type=int, default=6)
-parser.add_argument('-batch-size', type=int, default=16)
+parser.add_argument('-batch-size', type=int, default=8)
 parser.add_argument('-log-interval', type=int, default=1)
 parser.add_argument('-test-interval', type=int, default=100)
 parser.add_argument('-save-interval', type=int, default=100)
 parser.add_argument('-save-dir', type=str, default='snapshot')
 # data 
-parser.add_argument('-shuffle', action='store_false')
+parser.add_argument('-shuffle', action='store_true', default=True)
 # model
 parser.add_argument('-dropout', type=float, default=0.6)
-parser.add_argument('-embed-dim', type=int, default=100)
-parser.add_argument('-input-size', type=int, default=100)
-parser.add_argument('-hidden-size', type=int, default=60)
+parser.add_argument('-use-embedding', action='store_true', default=True)
+parser.add_argument('-embed-dim', type=int, default=300)
+parser.add_argument('-input-size', type=int, default=300)
+parser.add_argument('-hidden-size', type=int, default=200)
 parser.add_argument('-which-model', type=str, default='lstm')
-parser.add_argument('-static', action='store_false', default=False)
+parser.add_argument('-static', action='store_true', default=False)
 # device
 parser.add_argument('-device', type=int, default=-1)
 parser.add_argument('-no-cuda', action='store_true', default=True)
 # option
 parser.add_argument('-snapshot', type=str, default=None)
 parser.add_argument('-predict', type=str, default=None)
-parser.add_argument('-test', action='store_false', default=False)
-parser.add_argument('-label5', action='store_true')
+parser.add_argument('-test', action='store_true', default=False)
+parser.add_argument('-label5', action='store_true', default=False)
 args = parser.parse_args()
 
 
 # load dataset
-def mr(text_field, label_field, **kargs):
-    train_data, dev_data, test_data = mydatasets.MR.splits(text_field, label_field)
+def mr(text_field, label_field, label5, **kargs):
+    train_data, dev_data, test_data = mydatasets.MR.splits(text_field, label_field, label5=label5)
     text_field.build_vocab(train_data)
     label_field.build_vocab(train_data)
     train_iter, dev_iter, test_iter = data.Iterator.splits(
@@ -57,12 +58,7 @@ def mr(text_field, label_field, **kargs):
     return train_iter, dev_iter, test_iter
 
 
-'''
-做法是根据生成的itos来生成embedding，
-然后保存一个pickle，如果有pickle就不执行这个了
-'''
-
-
+# create embedding
 def getEmbedding(plk_path, embed_path, id2word, name):
     if os.path.exists(plk_path):
         plk_f = open(plk_path, 'rb+')
@@ -101,14 +97,28 @@ def getEmbedding(plk_path, embed_path, id2word, name):
 
 # load data
 print("\nLoading data...")
+# ????
 text_field = data.Field(lower=True)
 label_field = data.Field(sequential=False)
-train_iter, dev_iter, test_iter = mr(text_field, label_field, device=-1, repeat=False, shuffle=False)
+train_iter, dev_iter, test_iter = mr(text_field, label_field,
+                                     device=args.device,
+                                     repeat=False,
+                                     shuffle=args.shuffle,
+                                     label5=args.label5)
 
 
 # load embedding
-id2word = text_field.vocab.itos
-m_embedding = getEmbedding('./data/100d.pkl', 'D:/software/词向量和语料/glove.6B.100d.txt', id2word, '100d.pkl')
+m_embedding = None
+if args.use_embedding:
+    id2word = text_field.vocab.itos
+    m_embedding = getEmbedding('./data/conj300d.pkl',
+                               './data/glove.sentiment.conj.pretrained.txt',
+                               id2word,
+                               'conj300d.pkl')
+    # m_embedding = getEmbedding('./data/conj300d.pkl',
+    #                            './data/glove.sentiment.conj.pretrained.txt',
+    #                            id2word,
+    #                            'conj300d.pkl')
 
 
 # update args and print
@@ -129,6 +139,8 @@ if args.snapshot is None:
         m_model = model.LSTM(args, m_embedding)
     elif args.which_model == 'gru':
         m_model = model.GRU(args, m_embedding)
+    elif args.which_model == 'rnn':
+        m_model = model.RNN(args, m_embedding)
 else:
     print('\nLoading model from [%s]...' % args.snapshot)
     try:

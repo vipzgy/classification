@@ -13,11 +13,11 @@ class LSTM(nn.Module):
         self.args = args
 
         self.embed = nn.Embedding(args.embed_num, args.embed_dim)
-        self.embed.weight.data.copy_(m_embedding)
+        if args.use_embedding:
+            self.embed.weight.data.copy_(m_embedding)
         self.dropout = nn.Dropout(args.dropout)
 
-        self.lstm = nn.LSTM(args.input_size, args.hidden_size, dropout=args.dropout, batch_first=True,
-                            bidirectional=True)
+        self.lstm = nn.LSTM(args.input_size, args.hidden_size, dropout=args.dropout, batch_first=True, bidirectional=True)
 
         self.linearOut = nn.Linear(args.hidden_size * 2, args.class_num)
 
@@ -33,5 +33,5 @@ class LSTM(nn.Module):
         return x, lstm_h
 
     def init_hidden(self, batch):
-        return (Variable(torch.zeros(4, batch, self.args.hidden_size)),
-                Variable(torch.zeros(4, batch, self.args.hidden_size)))
+        return (Variable(torch.zeros(2, batch, self.args.hidden_size)),
+                Variable(torch.zeros(2, batch, self.args.hidden_size)))
