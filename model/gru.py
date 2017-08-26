@@ -13,12 +13,12 @@ class GRU(nn.Module):
         super(GRU, self).__init__()
         self.args = args
 
-        self.embed = nn.Embedding(args.embed_num, args.embed_dim)
+        self.embed = nn.Embedding(args.embed_num, args.embed_dim, max_norm=args.max_norm)
         if args.use_embedding:
             self.embed.weight.data.copy_(m_embedding)
-        self.dropout = nn.Dropout(args.dropout)
+        self.dropout = nn.Dropout(args.dropout_embed)
 
-        self.gru = nn.GRU(args.input_size, args.hidden_size, dropout=args.dropout, batch_first=True, bidirectional=True)
+        self.gru = nn.GRU(args.input_size, args.hidden_size, dropout=args.dropout_rnn, batch_first=True, bidirectional=True)
 
         self.linearOut = nn.Linear(args.hidden_size * 2, args.class_num)
 

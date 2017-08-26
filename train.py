@@ -4,7 +4,7 @@ import sys
 import torch
 import torch.autograd as autograd
 import torch.nn.functional as F
-# import torch.nn.utils as utils
+import torch.nn.utils as utils
 
 
 def train(train_iter, dev_iter, model, args):
@@ -28,7 +28,8 @@ def train(train_iter, dev_iter, model, args):
             logit, _ = model(feature, hidden)
             loss = F.cross_entropy(logit, target)
             loss.backward()
-            # utils.clip_grad_norm(model.parameters(), 1e-4)
+# ???
+            # utils.clip_grad_norm(model.parameters(), None)
             optimizer.step()
 
             steps += 1
