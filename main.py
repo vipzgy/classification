@@ -30,13 +30,19 @@ parser.add_argument('-shuffle', action='store_true', default=True)
 # model
 parser.add_argument('-dropout-embed', type=float, default=0.5)
 parser.add_argument('-dropout-rnn', type=float, default=0.6)
+
 parser.add_argument('-use-embedding', action='store_true', default=True)
-parser.add_argument('-max-norm', type=float, default=2.0)
+parser.add_argument('-max-norm', type=float, default=None)
 parser.add_argument('-embed-dim', type=int, default=300)
+
 parser.add_argument('-input-size', type=int, default=300)
 parser.add_argument('-hidden-size', type=int, default=200)
-parser.add_argument('-which-model', type=str, default='gru')
+
+parser.add_argument('-kernel-num', type=int, default=100, help='number of each kind of kernel')
+parser.add_argument('-kernel-sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
 parser.add_argument('-static', action='store_true', default=False)
+
+parser.add_argument('-which-model', type=str, default='gru')
 # device
 parser.add_argument('-device', type=int, default=-1)
 parser.add_argument('-no-cuda', action='store_true', default=True)
@@ -136,6 +142,7 @@ for attr, value in sorted(args.__dict__.items()):
 
 # model
 m_model = None
+rtrain = True
 if args.snapshot is None:
     if args.which_model == 'lstm':
         m_model = model.LSTM(args, m_embedding)
@@ -143,6 +150,8 @@ if args.snapshot is None:
         m_model = model.GRU(args, m_embedding)
     elif args.which_model == 'rnn':
         m_model = model.RNN(args, m_embedding)
+    elif args.which_model == 'cnn':
+        m_model = model.CNN(args, m_embedding)
 else:
     print('\nLoading model from [%s]...' % args.snapshot)
     try:

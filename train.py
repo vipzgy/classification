@@ -22,10 +22,9 @@ def train(train_iter, dev_iter, model, args):
             feature.data.t_(), target.data.sub_(1)  # batch first, index align
             if args.cuda:
                 feature, target = feature.cuda(), target.cuda()
-            hidden = model.init_hidden(len(feature))
 
             optimizer.zero_grad()
-            logit, _ = model(feature, hidden)
+            logit = model(feature)
             loss = F.cross_entropy(logit, target)
             loss.backward()
 # ???
@@ -59,9 +58,8 @@ def eval(data_iter, model, args):
         feature.data.t_(), target.data.sub_(1)  # batch first, index align
         if args.cuda:
             feature, target = feature.cuda(), target.cuda()
-        hidden = model.init_hidden(len(feature))
 
-        logit, _ = model(feature, hidden)
+        logit = model(feature)
         loss = F.cross_entropy(logit, target, size_average=False)
 
         avg_loss += loss.data[0]
@@ -83,8 +81,8 @@ def test(data_iter, model, args):
         feature.data.t_(), target.data.sub_(1)  # batch first, index align
         if args.cuda:
             feature, target = feature.cuda(), target.cuda()
-        hidden = model.init_hidden(len(feature))
-        logit, _ = model(feature, hidden)
+
+        logit = model(feature)
         loss = F.cross_entropy(logit, target, size_average=False)
 
         avg_loss += loss.data[0]

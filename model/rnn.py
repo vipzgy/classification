@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import torch
 import torch.nn as nn
-import torch.functional as F
+import torch.nn.functional as F
 from torch.autograd import Variable
 
 torch.manual_seed(66)
@@ -21,7 +21,8 @@ class RNN(nn.Module):
 
         self.linearOut = nn.Linear(args.hidden_size * 2, args.class_num)
 
-    def forward(self, x, hidden):
+    def forward(self, x):
+        hidden = Variable(torch.zeros(2, x.size(0), self.args.hidden_size))
         x = self.embed(x)
         x = self.dropout(x)
 
@@ -30,7 +31,4 @@ class RNN(nn.Module):
         x = F.tanh(torch.transpose(x, 1, 2))
         x = F.max_pool1d(x, x.size(2)).squeeze(2)
         x = self.linearOut(x)
-        return x, lstm_h
-
-    def init_hidden(self, batch):
-        return Variable(torch.zeros(2, batch, self.args.hidden_size))
+        return x
