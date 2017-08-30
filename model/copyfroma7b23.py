@@ -16,8 +16,8 @@ class LSTMCopyFromA7b23(nn.Module):
         if args.use_embedding:
             self.embed.weight.data.copy_(m_embedding)
 
-        self.lstm = nn.LSTM(args.input_size, args.hidden_size)
-        self.linearOut = nn.Linear(args.hidden_size, 2)
+        self.lstm = nn.LSTM(args.input_size, args.hidden_size, batch_first=True)
+        self.linearOut = nn.Linear(args.hidden_size, args.class_num)
 
         # self.dropout = nn.Dropout(args.dropout_embed)
         #
@@ -26,10 +26,12 @@ class LSTMCopyFromA7b23(nn.Module):
         # self.linearOut = nn.Linear(args.hidden_size * 2, args.class_num)
 
     def forward(self, x):
-        hidden = Variable(torch.zeros(1, x.size(0), self.args.hidden_size))
-        x = self.embeddings(x).view(len(x), 1, -1)
+        hidden = (Variable(torch.zeros(1, x.size(0), self.args.hidden_size)),
+                  Variable(torch.zeros(1, x.size(0), self.args.hidden_size)))
+        x = self.embed(x)
         lstm_out, lstm_h = self.lstm(x, hidden)
-        x = lstm_out[-1]
+        x = torch.transpose(lstm_out, 0, 1)
+        x = x[-1]
         x = self.linearOut(x)
         x = F.log_softmax(x)
         return x

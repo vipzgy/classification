@@ -19,7 +19,7 @@ torch.manual_seed(66)
 parser = argparse.ArgumentParser(description='classificer')
 # learning
 parser.add_argument('-lr', type=float, default=0.001)
-parser.add_argument('-epochs', type=int, default=6)
+parser.add_argument('-epochs', type=int, default=64)
 parser.add_argument('-batch-size', type=int, default=16)
 parser.add_argument('-log-interval', type=int, default=1)
 parser.add_argument('-test-interval', type=int, default=100)
@@ -28,8 +28,8 @@ parser.add_argument('-save-dir', type=str, default='snapshot')
 # data 
 parser.add_argument('-shuffle', action='store_true', default=True)
 # model
-parser.add_argument('-dropout-embed', type=float, default=0.5)
-parser.add_argument('-dropout-rnn', type=float, default=0.5)
+parser.add_argument('-dropout-embed', type=float, default=0.4)
+parser.add_argument('-dropout-rnn', type=float, default=0.4)
 
 parser.add_argument('-use-embedding', action='store_true', default=True)
 parser.add_argument('-max-norm', type=float, default=15.0)
@@ -42,7 +42,7 @@ parser.add_argument('-kernel-num', type=int, default=100)
 parser.add_argument('-kernel-sizes', type=str, default='3,4,5')
 parser.add_argument('-static', action='store_true', default=False)
 
-parser.add_argument('-which-model', type=str, default='lstm')
+parser.add_argument('-which-model', type=str, default='lstmCopyFromA7b23')
 # device
 parser.add_argument('-device', type=int, default=-1)
 parser.add_argument('-no-cuda', action='store_true', default=True)
@@ -152,6 +152,8 @@ if args.snapshot is None:
         m_model = model.RNN(args, m_embedding)
     elif args.which_model == 'cnn':
         m_model = model.CNN(args, m_embedding)
+    elif args.which_model == 'lstmCopyFromA7b23':
+        m_model = model.LSTMCopyFromA7b23(args, m_embedding)
 else:
     print('\nLoading model from [%s]...' % args.snapshot)
     try:
@@ -177,25 +179,3 @@ elif args.test:
 else:
     torch.set_num_threads(3)
     train.train(train_iter, dev_iter, test_iter, m_model, args)
-
-    # 直接测试所有的模型，选出最好的
-    # m_max = -99999
-    # whichmax = ''
-    # dirlist = os.listdir(args.save_dir)
-    # f = open(os.path.join(args.save_dir, 'testresult'), "w+", encoding='utf-8')
-    # for attr, value in sorted(args.__dict__.items()):
-    #     f.write("\t{}={} \n".format(attr.upper(), value))
-    #     f.flush()
-    # f.write('----------------------------------------------------')
-    # f.flush()
-    # for name in dirlist:
-    #     t_model = torch.load(os.path.join(args.save_dir, name))
-    #     m_str, accuracy = train.test(test_iter, t_model, args)
-    #     f.write(m_str + '-------' + name + '\n')
-    #     f.flush()
-    #     if accuracy > m_max:
-    #         m_max = accuracy
-    #         whichmax = name
-    # f.write('max is {} using {}'.format(m_max, whichmax))
-    # f.flush()
-    # f.close()

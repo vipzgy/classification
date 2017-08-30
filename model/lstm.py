@@ -28,7 +28,9 @@ class LSTM(nn.Module):
         nn.init.xavier_normal(self.linearOut.weight, 1)
 
     def forward(self, x):
-        hidden = Variable(torch.zeros(2, x.size(0), self.args.hidden_size))
+        # hidden = Variable(torch.zeros(2, x.size(0), self.args.hidden_size))
+        hidden = (Variable(torch.zeros(2, x.size(0), self.args.hidden_size)),
+                  Variable(torch.zeros(2, x.size(0), self.args.hidden_size)))
         x = self.embed(x)
         x = self.dropout(x)
 
