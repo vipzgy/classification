@@ -7,11 +7,21 @@ import torch.nn.functional as F
 import torch.nn.utils as utils
 
 
-def train(train_iter, dev_iter, model, args):
+def train(train_iter, dev_iter, test_iter, model, args):
     if args.cuda:
         model.cuda()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+
+    m_max = -99999
+    whichmax = ''
+    if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
+    output = open(os.path.join(args.save_dir, 'test.log'), "w+", encoding='utf-8')
+    for attr, value in sorted(args.__dict__.items()):
+        output.write("\t{}={} \n".format(attr.upper(), value))
+        output.flush()
+    output.write('----------------------------------------------------')
+    output.flush()
 
     steps = 0
     model.train()
@@ -28,7 +38,7 @@ def train(train_iter, dev_iter, model, args):
             loss = F.cross_entropy(logit, target)
             loss.backward()
 # ???
-            # utils.clip_grad_norm(model.parameters(), None)
+            utils.clip_grad_norm(model.parameters(), 6)
             optimizer.step()
 
             steps += 1
@@ -43,11 +53,25 @@ def train(train_iter, dev_iter, model, args):
                                                                              batch.batch_size))
             if steps % args.test_interval == 0:
                 eval(dev_iter, model, args)
+
+                m_str, acc = test(dev_iter, model, args)
+                output.write(m_str + '-------' + str(steps))
+                output.flush()
+
             if steps % args.save_interval == 0:
-                if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
                 save_prefix = os.path.join(args.save_dir, 'snapshot')
                 save_path = '{}_steps{}.pt'.format(save_prefix, steps)
                 torch.save(model, save_path)
+
+                m_str, acc = test(test_iter, model, args)
+                output.write(m_str + '-------' + str(steps) + '\n')
+                output.flush()
+                if acc > m_max:
+                    m_max = acc
+                    whichmax = steps
+    output.write('max is {} using {}'.format(m_max, whichmax))
+    output.flush()
+    output.close()
 
 
 def eval(data_iter, model, args):
