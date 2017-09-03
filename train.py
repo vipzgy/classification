@@ -2,6 +2,7 @@
 import os
 import sys
 import torch
+import torch.optim.lr_scheduler as lr_scheduler
 import torch.autograd as autograd
 import torch.nn.functional as F
 import torch.nn.utils as utils
@@ -11,11 +12,12 @@ def train(train_iter, dev_iter, test_iter, model, args):
     if args.cuda:
         model.cuda()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-8)
 
     m_max = -99999
     whichmax = ''
-    if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
+    if not os.path.isdir(args.save_dir):
+        os.makedirs(args.save_dir)
     output = open(os.path.join(args.save_dir, 'test.log'), "w+", encoding='utf-8')
     for attr, value in sorted(args.__dict__.items()):
         output.write("\t{}={} \n".format(attr.upper(), value))
@@ -23,9 +25,24 @@ def train(train_iter, dev_iter, test_iter, model, args):
     output.write('----------------------------------------------------')
     output.flush()
 
+    scheduler = None
+    if args.lr_scheduler == 'lambda':
+        lambda1 = lambda epoch: epoch // 30
+        lambda2 = lambda epoch: 0.95 ** epoch
+        scheduler = lr_scheduler.LambdaLR(optimizer, lambda2)
+    elif args.lr_scheduler == 'step':
+        scheduler = lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+    elif args.lr_scheduler == '':
+        pass
+
     steps = 0
     model.train()
     for epoch in range(1, args.epochs+1):
+
+        if not args.lr_scheduler is None:
+            scheduler.step()
+            print(scheduler.get_lr())
+
         print("第", epoch, "次迭代")
         for batch in train_iter:
             feature, target = batch.text, batch.label
@@ -37,8 +54,10 @@ def train(train_iter, dev_iter, test_iter, model, args):
             logit = model(feature)
             loss = F.cross_entropy(logit, target)
             loss.backward()
-# ???
-            utils.clip_grad_norm(model.parameters(), 6)
+
+            if not args.clip_norm:
+                utils.clip_grad_norm(model.parameters(), args.clip_norm)
+
             optimizer.step()
 
             steps += 1
@@ -69,7 +88,7 @@ def train(train_iter, dev_iter, test_iter, model, args):
                 if acc > m_max:
                     m_max = acc
                     whichmax = steps
-    output.write('max is {} using {}'.format(m_max, whichmax))
+    output.write('\nmax is {} using {}'.format(m_max, whichmax))
     output.flush()
     output.close()
 

@@ -19,7 +19,7 @@ torch.manual_seed(66)
 parser = argparse.ArgumentParser(description='classificer')
 # learning
 parser.add_argument('-lr', type=float, default=0.001)
-parser.add_argument('-epochs', type=int, default=64)
+parser.add_argument('-epochs', type=int, default=8)
 parser.add_argument('-batch-size', type=int, default=16)
 parser.add_argument('-log-interval', type=int, default=1)
 parser.add_argument('-test-interval', type=int, default=100)
@@ -28,11 +28,11 @@ parser.add_argument('-save-dir', type=str, default='snapshot')
 # data 
 parser.add_argument('-shuffle', action='store_true', default=True)
 # model
-parser.add_argument('-dropout-embed', type=float, default=0.4)
-parser.add_argument('-dropout-rnn', type=float, default=0.4)
+parser.add_argument('-dropout-embed', type=float, default=0.6)
+parser.add_argument('-dropout-rnn', type=float, default=0.5)
 
 parser.add_argument('-use-embedding', action='store_true', default=True)
-parser.add_argument('-max-norm', type=float, default=15.0)
+parser.add_argument('-max-norm', type=float, default=None)
 parser.add_argument('-embed-dim', type=int, default=300)
 
 parser.add_argument('-input-size', type=int, default=300)
@@ -42,7 +42,7 @@ parser.add_argument('-kernel-num', type=int, default=100)
 parser.add_argument('-kernel-sizes', type=str, default='3,4,5')
 parser.add_argument('-static', action='store_true', default=False)
 
-parser.add_argument('-which-model', type=str, default='lstmCopyFromA7b23')
+parser.add_argument('-which-model', type=str, default='lstm')
 # device
 parser.add_argument('-device', type=int, default=-1)
 parser.add_argument('-no-cuda', action='store_true', default=True)
@@ -51,6 +51,8 @@ parser.add_argument('-snapshot', type=str, default=None)
 parser.add_argument('-predict', type=str, default=None)
 parser.add_argument('-test', action='store_true', default=False)
 parser.add_argument('-label5', action='store_true', default=False)
+parser.add_argument('-lr-scheduler', type=str, default="lambda")
+parser.add_argument('-clip-norm', type=str, default=None)
 args = parser.parse_args()
 
 
@@ -69,6 +71,7 @@ def mr(text_field, label_field, label5, **kargs):
 # create embedding
 def getEmbedding(plk_path, embed_path, id2word, name):
     if os.path.exists(plk_path):
+
         plk_f = open(plk_path, 'rb+')
         m_embed = pickle.load(plk_f)
         m_embedding = torch.from_numpy(numpy.array(m_embed)).type(torch.DoubleTensor)
@@ -154,6 +157,10 @@ if args.snapshot is None:
         m_model = model.CNN(args, m_embedding)
     elif args.which_model == 'lstmCopyFromA7b23':
         m_model = model.LSTMCopyFromA7b23(args, m_embedding)
+    elif args.which_model == 'ConvLSTM':
+        m_model = model.ConvLSTM(args, m_embedding)
+    elif args.which_model == "mylstm":
+        m_model = model.MyLSTM(args, m_embedding)
 else:
     print('\nLoading model from [%s]...' % args.snapshot)
     try:
