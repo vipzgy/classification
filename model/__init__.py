@@ -1,11 +1,14 @@
-from .gru import GRU
-from .lstm import LSTM
-from .rnn import RNN
 from .cnn import CNN
+from .gru import GRU, BIGRU
+from .lstm import LSTM, BILSTM
+from .rnn import RNN, BIRNN
 from .copyfroma7b23 import LSTMCopyFromA7b23
 from .convolution_lstm import ConvLSTM
-from .mylstm import MyLSTM
+from .mylstm import MyLSTM, MyBILSTM
 
-__all__ = ["GRU", "LSTM", "RNN", "CNN",
-           "LSTMCopyFromA7b23", "ConvLSTM"
-           "MyLSTM"]
+__all__ = ["GRU", "BIGRU",
+           "LSTM", "BILSTM",
+           "RNN", "BIRNN"
+           "CNN",
+           "LSTMCopyFromA7b23", "ConvLSTM",
+           "MyLSTM", "MyBILSTM"]

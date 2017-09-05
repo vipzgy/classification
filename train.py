@@ -39,7 +39,7 @@ def train(train_iter, dev_iter, test_iter, model, args):
     model.train()
     for epoch in range(1, args.epochs+1):
 
-        if not args.lr_scheduler is None:
+        if args.lr_scheduler is not None:
             scheduler.step()
             print(scheduler.get_lr())
 
@@ -55,7 +55,7 @@ def train(train_iter, dev_iter, test_iter, model, args):
             loss = F.cross_entropy(logit, target)
             loss.backward()
 
-            if not args.clip_norm:
+            if args.clip_norm is not None:
                 utils.clip_grad_norm(model.parameters(), args.clip_norm)
 
             optimizer.step()

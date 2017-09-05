@@ -6,13 +6,12 @@ from torch.autograd import Variable
 
 
 class MyLSTMCell(nn.Module):
-    def __init__(self, input_size, hidden_size, bias=True):
+    def __init__(self, input_size, hidden_size, dropout_rnn=None, bias=True):
         super(MyLSTMCell, self).__init__()
+        self.dropout = dropout_rnn
 
-        # 先不要激活函数,激活函数没有参数，可以放在forward里面用F
-        # 这里是直接带入batch计算的
         if bias is False:
-            self.linearf = nn.Linear(input_size + hidden_size, hidden_size)
+            self.linearf = nn.Linear(input_size + hidden_size, hidden_size, )
             self.lineari = nn.Linear(input_size + hidden_size, hidden_size)
             self.linearo = nn.Linear(input_size + hidden_size, hidden_size)
             self.linearc = nn.Linear(input_size + hidden_size, hidden_size)
@@ -21,6 +20,8 @@ class MyLSTMCell(nn.Module):
             self.lineari = nn.Linear(input_size + hidden_size, hidden_size, bias=True)
             self.linearo = nn.Linear(input_size + hidden_size, hidden_size, bias=True)
             self.linearc = nn.Linear(input_size + hidden_size, hidden_size, bias=True)
+
+        self.dropout = nn.Dropout(dropout_rnn)
 
     def forward(self, xt, ht_pro, ct_pro):
         ft = F.sigmoid(self.linearf(torch.cat([xt, ht_pro], 1)))
@@ -31,6 +32,9 @@ class MyLSTMCell(nn.Module):
         ct = torch.mul(ft, c_t) + torch.mul(it, c_t)
         ht = torch.mul(ot, F.tanh(ct))
 
+        if self.dropout is not None:
+            ht = self.dropout(ht)
+            ct = self.dropout(ct)
         return ht, ct
 
 
@@ -44,11 +48,50 @@ class MyLSTM(nn.Module):
             self.embed.weight.data.copy_(m_embedding)
         self.dropout = nn.Dropout(args.dropout_embed)
 
-        # 这是一个双向lstm
-        self.lstm_cell_forward = MyLSTMCell(args.input_size, args.hidden_size)
-        self.lstm_cell_backward = MyLSTMCell(args.input_size, args.hidden_size)
+        self.lstm = MyLSTMCell(args.input_size, args.hidden_size, args.dropout_rnn)
 
-        self.linearout = nn.Linear(args.hidden_size * 2, args.class_num)
+        self.linearout = nn.Linear(args.hidden_size, args.class_num)
+
+    def forward(self, x):
+        x = self.embed(x)
+        x = self.dropout(x)
+
+        x = torch.transpose(x, 0, 1)
+
+        h_i = Variable(torch.zeros(x.size(1), self.args.hidden_size))
+        c_i = Variable(torch.zeros(x.size(1), self.args.hidden_size))
+
+        for idx in range(x.size(0)):
+            input_cell = x[idx]
+            h_i, c_i = self.lstm(input_cell, h_i, c_i)
+            if idx == 0:
+                output = torch.unsqueeze(h_i, 0)
+            else:
+                output = torch.cat([output, torch.unsqueeze(h_i, 0)], 0)
+
+        output = torch.transpose(output, 0, 1)
+        output = F.tanh(torch.transpose(output, 1, 2))
+        output = F.max_pool1d(output, output.size(2)).squeeze(2)
+
+        output = self.linearout(output)
+        return output
+
+
+class MyBILSTM(nn.Module):
+    def __init__(self, args, m_embedding):
+        super(MyBILSTM, self).__init__()
+
+        self.args = args
+        self.embed = nn.Embedding(args.embed_num, args.embed_dim)
+        if args.use_embedding:
+            self.embed.weight.data.copy_(m_embedding)
+        self.dropout = nn.Dropout(args.dropout_embed)
+
+        # 这是一个双向lstm
+        self.lstm_cell_forward = MyLSTMCell(args.input_size, args.hidden_size, args.dropout_rnn)
+        self.lstm_cell_backward = MyLSTMCell(args.input_size, args.hidden_size, args.dropout_rnn)
+
+        self.linearout = nn.Linear(args.hidden_size, args.class_num)
 
     def forward(self, x):
         x = self.embed(x)
@@ -81,7 +124,20 @@ class MyLSTM(nn.Module):
 
             idx -= 1
 
-        output = torch.transpose(torch.cat([output_1, output_2], 2), 0, 1)
+        # output = torch.transpose(torch.cat([output_1, output_2], 2), 0, 1)
+        # output = F.tanh(torch.transpose(output, 1, 2))
+        # output = F.max_pool1d(output, output.size(2)).squeeze(2)
+
+        m_len = output_1.size(0)
+        for idx in range(output_1.size(0)):
+            t = F.tanh(torch.cat([output_1[idx], output_2[m_len - idx]], 0))
+            # t = F.max_pool1d(output, output.size(2)).squeeze(2)
+            if idx == 0:
+                output = torch.unsqueeze(t, 0)
+            else:
+                output = torch.cat([output, torch.unsqueeze(t, 0)], 0)
+
+        output = torch.transpose(output, 0, 1)
         output = F.tanh(torch.transpose(output, 1, 2))
         output = F.max_pool1d(output, output.size(2)).squeeze(2)
 

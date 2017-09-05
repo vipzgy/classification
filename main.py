@@ -28,8 +28,8 @@ parser.add_argument('-save-dir', type=str, default='snapshot')
 # data 
 parser.add_argument('-shuffle', action='store_true', default=True)
 # model
-parser.add_argument('-dropout-embed', type=float, default=0.6)
-parser.add_argument('-dropout-rnn', type=float, default=0.5)
+parser.add_argument('-dropout-embed', type=float, default=0.5)
+parser.add_argument('-dropout-rnn', type=float, default=0.2)
 
 parser.add_argument('-use-embedding', action='store_true', default=True)
 parser.add_argument('-max-norm', type=float, default=None)
@@ -42,7 +42,7 @@ parser.add_argument('-kernel-num', type=int, default=100)
 parser.add_argument('-kernel-sizes', type=str, default='3,4,5')
 parser.add_argument('-static', action='store_true', default=False)
 
-parser.add_argument('-which-model', type=str, default='lstm')
+parser.add_argument('-which-model', type=str, default='mybilstm')
 # device
 parser.add_argument('-device', type=int, default=-1)
 parser.add_argument('-no-cuda', action='store_true', default=True)
@@ -161,6 +161,9 @@ if args.snapshot is None:
         m_model = model.ConvLSTM(args, m_embedding)
     elif args.which_model == "mylstm":
         m_model = model.MyLSTM(args, m_embedding)
+    elif args.which_model == "mybilstm":
+        m_model = model.MyBILSTM(args, m_embedding)
+
 else:
     print('\nLoading model from [%s]...' % args.snapshot)
     try:
