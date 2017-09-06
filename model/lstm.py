@@ -17,20 +17,20 @@ class LSTM(nn.Module):
             self.embed.weight.data.copy_(m_embedding)
         self.dropout = nn.Dropout(args.dropout_embed)
 
-        self.lstm = nn.LSTM(args.input_size, args.hidden_size, dropout=args.dropout_rnn, batch_first=True, bidirectional=True)
+        self.lstm = nn.LSTM(args.input_size, args.hidden_size, dropout=args.dropout_rnn, batch_first=True, bidirectional=False)
         # 使用Xavier初始化，也就这一个是有weight
         # nn.init.xavier_normal(self.lstm.all_weights[0][0], 1)
         # nn.init.xavier_normal(self.lstm.all_weights[0][1], 1)
         # nn.init.xavier_normal(self.lstm.all_weights[1][0], 1)
         # nn.init.xavier_normal(self.lstm.all_weights[1][1], 1)
 
-        self.linearOut = nn.Linear(args.hidden_size * 2, args.class_num)
+        self.linearOut = nn.Linear(args.hidden_size, args.class_num)
         # nn.init.xavier_normal(self.linearOut.weight, 1)
 
     def forward(self, x):
         # hidden = Variable(torch.zeros(2, x.size(0), self.args.hidden_size))
-        hidden = (Variable(torch.zeros(2, x.size(0), self.args.hidden_size)),
-                  Variable(torch.zeros(2, x.size(0), self.args.hidden_size)))
+        hidden = (Variable(torch.zeros(1, x.size(0), self.args.hidden_size)),
+                  Variable(torch.zeros(1, x.size(0), self.args.hidden_size)))
         x = self.embed(x)
         x = self.dropout(x)
 

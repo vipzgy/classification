@@ -124,19 +124,22 @@ class MyBILSTM(nn.Module):
 
             idx -= 1
 
+        # 直接concat
         # output = torch.transpose(torch.cat([output_1, output_2], 2), 0, 1)
         # output = F.tanh(torch.transpose(output, 1, 2))
         # output = F.max_pool1d(output, output.size(2)).squeeze(2)
 
+        # 对应位置上的
         m_len = output_1.size(0)
         for idx in range(output_1.size(0)):
-            t = F.tanh(torch.cat([output_1[idx], output_2[m_len - idx]], 0))
-            # t = F.max_pool1d(output, output.size(2)).squeeze(2)
+            # mul
+            t = torch.mul(output_1[idx], output_2[m_len - idx - 1])
+            # average
+            # t = 0.5 * (output_1[idx] + output_2[m_len - idx - 1])
             if idx == 0:
                 output = torch.unsqueeze(t, 0)
             else:
                 output = torch.cat([output, torch.unsqueeze(t, 0)], 0)
-
         output = torch.transpose(output, 0, 1)
         output = F.tanh(torch.transpose(output, 1, 2))
         output = F.max_pool1d(output, output.size(2)).squeeze(2)
