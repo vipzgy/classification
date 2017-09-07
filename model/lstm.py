@@ -19,13 +19,13 @@ class LSTM(nn.Module):
 
         self.lstm = nn.LSTM(args.input_size, args.hidden_size, dropout=args.dropout_rnn, batch_first=True, bidirectional=False)
         # 使用Xavier初始化，也就这一个是有weight
-        # nn.init.xavier_normal(self.lstm.all_weights[0][0], 1)
-        # nn.init.xavier_normal(self.lstm.all_weights[0][1], 1)
-        # nn.init.xavier_normal(self.lstm.all_weights[1][0], 1)
-        # nn.init.xavier_normal(self.lstm.all_weights[1][1], 1)
+        nn.init.xavier_normal(self.lstm.all_weights[0][0], 1)
+        nn.init.xavier_normal(self.lstm.all_weights[0][1], 1)
+        nn.init.xavier_normal(self.lstm.all_weights[1][0], 1)
+        nn.init.xavier_normal(self.lstm.all_weights[1][1], 1)
 
         self.linearOut = nn.Linear(args.hidden_size, args.class_num)
-        # nn.init.xavier_normal(self.linearOut.weight, 1)
+        nn.init.xavier_normal(self.linearOut.weight, 1)
 
     def forward(self, x):
         # hidden = Variable(torch.zeros(2, x.size(0), self.args.hidden_size))
