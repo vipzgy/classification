@@ -17,12 +17,12 @@ class RNN(nn.Module):
             self.embed.weight.data.copy_(m_embedding)
         self.dropout = nn.Dropout(args.dropout_embed)
 
-        self.rnn = nn.RNN(args.input_size, args.hidden_size, dropout=args.dropout_rnn, batch_first=True, bidirectional=True)
+        self.rnn = nn.RNN(args.input_size, args.hidden_size, dropout=args.dropout_rnn, batch_first=True)
 
-        self.linearOut = nn.Linear(args.hidden_size * 2, args.class_num)
+        self.linearOut = nn.Linear(args.hidden_size, args.class_num)
 
     def forward(self, x):
-        hidden = Variable(torch.zeros(2, x.size(0), self.args.hidden_size))
+        hidden = Variable(torch.zeros(1, x.size(0), self.args.hidden_size))
         x = self.embed(x)
         x = self.dropout(x)
 

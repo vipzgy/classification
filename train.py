@@ -25,15 +25,16 @@ def train(train_iter, dev_iter, test_iter, model, args):
     output.write('----------------------------------------------------')
     output.flush()
 
-    scheduler = None
-    if args.lr_scheduler == 'lambda':
-        lambda1 = lambda epoch: epoch // 30
-        lambda2 = lambda epoch: 0.95 ** epoch
-        scheduler = lr_scheduler.LambdaLR(optimizer, lambda2)
-    elif args.lr_scheduler == 'step':
-        scheduler = lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
-    elif args.lr_scheduler == '':
-        pass
+    if args.lr_scheduler is not None:
+        scheduler = None
+        if args.lr_scheduler == 'lambda':
+            lambda1 = lambda epoch: epoch // 30
+            lambda2 = lambda epoch: 0.95 ** epoch
+            scheduler = lr_scheduler.LambdaLR(optimizer, lambda2)
+        elif args.lr_scheduler == 'step':
+            scheduler = lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+        elif args.lr_scheduler == '':
+            pass
 
     steps = 0
     model.train()
