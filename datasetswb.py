@@ -122,9 +122,11 @@ class Batch:
     def makeBatch(cls, item):
         max_len = 0
         for i in item:
-            if len(text) > max_len:
-                max_len = len(text)
-
+            if len(i[0]) > max_len:
+                max_len = len(i[0])
+        text = []
+        label = []
+        for i in
 
 
         return cls(text, label)
