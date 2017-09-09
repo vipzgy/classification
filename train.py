@@ -47,7 +47,7 @@ def train(train_iter, dev_iter, test_iter, model, args):
         print("第", epoch, "次迭代")
         for batch in train_iter:
             feature, target = batch.text, batch.label
-            feature.data.t_(), target.data.sub_(1)  # batch first, index align
+            # feature.data.t_(), target.data.sub_(1)  # batch first, index align
             if args.cuda:
                 feature, target = feature.cuda(), target.cuda()
 
@@ -97,9 +97,10 @@ def train(train_iter, dev_iter, test_iter, model, args):
 def eval(data_iter, model, args):
     model.eval()
     corrects, avg_loss = 0, 0
+    size = 0
     for batch in data_iter:
         feature, target = batch.text, batch.label
-        feature.data.t_(), target.data.sub_(1)  # batch first, index align
+        # feature.data.t_(), target.data.sub_(1)  # batch first, index align
         if args.cuda:
             feature, target = feature.cuda(), target.cuda()
 
@@ -109,8 +110,9 @@ def eval(data_iter, model, args):
         avg_loss += loss.data[0]
         corrects += (torch.max(logit, 1)
                      [1].view(target.size()).data == target.data).sum()
+        size += batch.batch_size
 
-    size = len(data_iter.dataset)
+    # size = len(data_iter.dataset)
     avg_loss = loss.data[0]/size
     accuracy = 100.0 * corrects/size
     model.train()
@@ -120,9 +122,10 @@ def eval(data_iter, model, args):
 def test(data_iter, model, args):
     model.eval()
     corrects, avg_loss = 0, 0
+    size = 0
     for batch in data_iter:
         feature, target = batch.text, batch.label
-        feature.data.t_(), target.data.sub_(1)  # batch first, index align
+        # feature.data.t_(), target.data.sub_(1)  # batch first, index align
         if args.cuda:
             feature, target = feature.cuda(), target.cuda()
 
@@ -133,7 +136,9 @@ def test(data_iter, model, args):
         corrects += (torch.max(logit, 1)
                      [1].view(target.size()).data == target.data).sum()
 
-    size = len(data_iter.dataset)
+        size += batch.batch_size
+
+    # size = len(data_iter.dataset)
     avg_loss = loss.data[0]/size
     accuracy = 100.0 * corrects/size
     model.train()

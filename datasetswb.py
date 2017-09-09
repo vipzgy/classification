@@ -29,7 +29,7 @@ class Example:
 
 # 利用正则表达式处理每一句话
 def cleansequence(string):
-    string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
+    # string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
     string = re.sub(r"\'s", " \'s", string)
     string = re.sub(r"\'ve", " \'ve", string)
     string = re.sub(r"n\'t", " n\'t", string)
@@ -65,8 +65,7 @@ def splitcorpus(path, label_num=2, shuffle=True):
             elif line[-2] == '3' or line[-2] == '4':
                 examples += Example.fromlist(line[:line.find('|')], 'positive')
     if shuffle:
-        # examples = random.shuffle(examples)
-        pass
+        random.shuffle(examples)
     return examples
 
 
@@ -80,7 +79,7 @@ class Vocabulary:
         self.word2id = word2id
 
     @classmethod
-    def makeVocabulary(cls, examplesAll):
+    def makeVocabularyByText(cls, examplesAll):
         frequence = dict()
         id2word = {}
         word2id = {}
@@ -91,12 +90,33 @@ class Vocabulary:
                         frequence[word] += 1
                     else:
                         frequence[word] = 1
-                # 把标签也放进去了
+        # 排序,整理笔记
+        # 按照降序排列
+        allwords = sorted(frequence.items(), key=lambda t: t[1], reverse=True)
+        id2word[0] = "<unknown>"
+        word2id["<unknown>"] = 0
+        id2word[1] = "<padding>"
+        word2id["<padding>"] = 1
+        for idx, word in enumerate(allwords):
+            """
+            0 留给 <unknown>
+            1 留给 <padding>
+            """
+            id2word[idx + 2] = word[0]
+            word2id[word[0]] = idx + 2
+        return cls(id2word, word2id)
+
+    @classmethod
+    def makeVocabularyByLable(cls, examplesAll):
+        frequence = dict()
+        id2word = {}
+        word2id = {}
+        for examples in examplesAll:
+            for e in examples:
                 if e.label in frequence:
                     frequence[e.label] += 1
                 else:
                     frequence[e.label] = 1
-
         # 排序,整理笔记
         # 按照降序排列
         allwords = sorted(frequence.items(), key=lambda t: t[1], reverse=True)
@@ -105,8 +125,8 @@ class Vocabulary:
             0 留给 <unknown>
             1 留给 <padding>
             """
-            id2word[idx + 2] = word[0]
-            word2id[word[0]] = idx + 2
+            id2word[idx] = word[0]
+            word2id[word[0]] = idx
         return cls(id2word, word2id)
 
 
@@ -118,6 +138,7 @@ class Batch:
     def __init__(self, text, label):
         self.text = text
         self.label = label
+        self.batch_size = len(text)
 
     @classmethod
     def makeBatch(cls, item):
@@ -153,20 +174,23 @@ class MyIterator:
     batch * （batch个句子中最长的那个句子的大小）
     转换成id表示
     """
-    def __init__(self, batch_size, examples, vocabulary):
-        self.iterators = [] # 按照batch_size所有的
-        item = [] # 一个batch
-        count = 0 # 计数，每batch_size的倍数生成一次Batch
+    def __init__(self, batch_size, examples, vocabulary_text, vocabulary_label):
+        # 按照batch_size所有的
+        self.iterators = []
+        # 一个batch
+        item = []
+        # 计数，每batch_size的倍数生成一次Batch
+        count = 0
         for example in examples:
             text = []
             label = []
             for word in example.sequence:
-                if word in vocabulary.word2id:
-                    text.append(vocabulary.word2id[word])
+                if word in vocabulary_text.word2id:
+                    text.append(vocabulary_text.word2id[word])
                 else:
                     # dev & test 的数据可能不在vocabulary中，填充0<unknown>
                     text.append(0)
-            label.append(vocabulary.word2id[example.label])
+            label.append(vocabulary_label.word2id[example.label])
             item.append((text, label))
             count += 1
             if count % batch_size == 0 or count == len(examples):
@@ -186,13 +210,15 @@ class MyDatasets:
             self.examples = examples
         # 建立词表
         # 也没有必要非要在这里建立词表，也可以单写
-        m_vocabulary = Vocabulary.makeVocabulary([self.examples])
+        vocabulary_text = Vocabulary.makeVocabularyByText([self.examples])
+        vocabulary_label = Vocabulary.makeVocabularyByLable([self.examples])
         """
         感觉这里必然会有一些问题存在
         """
         # 生成迭代器，batch
         batch_size = args
-        iterator = MyIterator(batch_size, self.examples, m_vocabulary)
+        iterator = MyIterator(batch_size, self.examples, vocabulary_text, vocabulary_label)
+        print("sdfs")
 
 
 if __name__ == "__main__":

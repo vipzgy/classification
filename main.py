@@ -7,11 +7,10 @@ import datetime
 
 import numpy
 import torch
-import torchtext.data as data
 
 import model
 import train
-import mydatasets
+import datasetswb
 
 random.seed(66)
 torch.manual_seed(66)
@@ -28,8 +27,8 @@ parser.add_argument('-save-dir', type=str, default='snapshot')
 # data 
 parser.add_argument('-shuffle', action='store_true', default=True)
 # model
-parser.add_argument('-dropout-embed', type=float, default=0.5)
-parser.add_argument('-dropout-rnn', type=float, default=0.2)
+parser.add_argument('-dropout-embed', type=float, default=0.6)
+parser.add_argument('-dropout-rnn', type=float, default=0.1)
 
 parser.add_argument('-use-embedding', action='store_true', default=True)
 parser.add_argument('-max-norm', type=float, default=None)
@@ -42,7 +41,7 @@ parser.add_argument('-kernel-num', type=int, default=100)
 parser.add_argument('-kernel-sizes', type=str, default='3,4,5')
 parser.add_argument('-static', action='store_true', default=False)
 
-parser.add_argument('-which-model', type=str, default='mylstm')
+parser.add_argument('-which-model', type=str, default='lstm')
 # device
 parser.add_argument('-device', type=int, default=-1)
 parser.add_argument('-no-cuda', action='store_true', default=True)
@@ -50,23 +49,11 @@ parser.add_argument('-no-cuda', action='store_true', default=True)
 parser.add_argument('-snapshot', type=str, default=None)
 parser.add_argument('-predict', type=str, default=None)
 parser.add_argument('-test', action='store_true', default=False)
-parser.add_argument('-label5', action='store_true', default=False)
+parser.add_argument('-label-num', type=int, default=2)
 parser.add_argument('-lr-scheduler', type=str, default="lambda")
 parser.add_argument('-clip-norm', type=str, default=None)
 
 args = parser.parse_args()
-
-
-# load dataset
-def mr(text_field, label_field, label5, **kargs):
-    train_data, dev_data, test_data = mydatasets.MR.splits(text_field, label_field, label5=label5)
-    text_field.build_vocab(train_data)
-    label_field.build_vocab(train_data)
-    train_iter, dev_iter, test_iter = data.Iterator.splits(
-        (train_data, dev_data, test_data),
-        batch_sizes=(args.batch_size, args.batch_size, args.batch_size),
-        **kargs)
-    return train_iter, dev_iter, test_iter
 
 
 # create embedding
@@ -87,55 +74,58 @@ def getEmbedding(plk_path, embed_path, id2word, name):
                 m_dict[strs[0]] = [float(i) for idx2, i in enumerate(strs) if not idx2 == 0]
         embed_f.close()
 
-        m_embed = [m_dict['unknown']]
+        m_embed = []
         notfound = 0
-        for idx, word in enumerate(id2word):
-            if not idx == 0:
-                if word in m_dict:
-                    m_embed.append(m_dict[word])
-                else:
-                    notfound += 1
-                    m_embed.append([random.uniform(-0.25, 0.25) for i in range(args.embed_dim)])
+        for idx in range(len(id2word)):
+            if id2word[idx] in m_dict:
+                m_embed.append(m_dict[id2word[idx]])
+            else:
+                notfound += 1
+                m_embed.append([round(random.uniform(-0.25, 0.25), 6) for i in range(args.embed_dim)])
         print('notfound:', notfound)
-        print('ratio:', notfound / (len(id2word) - 1))
+        print('ratio:', notfound / len(id2word))
         m_embedding = torch.from_numpy(numpy.array(m_embed)).type(torch.DoubleTensor)
 
         f = open(os.path.join('./data', name), 'wb+')
         # pickle.dump(id2word, f)
         pickle.dump(m_embed, f)
         f.close()
+
+        k = m_embed[222]
     return m_embedding
 
 
 # load data
 print("\nLoading data...")
 '''not understand'''
-text_field = data.Field(lower=True)
-label_field = data.Field(sequential=False)
-train_iter, dev_iter, test_iter = mr(text_field, label_field,
-                                     device=args.device,
-                                     repeat=False,
-                                     shuffle=args.shuffle,
-                                     label5=args.label5)
+train_data = datasetswb.splitcorpus("./data/raw.clean.train", args.label_num, args.shuffle)
+dev_data = datasetswb.splitcorpus("./data/raw.clean.dev", args.label_num, args.shuffle)
+test_data = datasetswb.splitcorpus("./data/raw.clean.test", args.label_num, args.shuffle)
+vocabulary_text = datasetswb.Vocabulary.makeVocabularyByText([train_data])
+vocabulary_label = datasetswb.Vocabulary.makeVocabularyByLable([train_data])
+train_iter = datasetswb.MyIterator(args.batch_size, train_data, vocabulary_text, vocabulary_label).iterators
+dev_iter = datasetswb.MyIterator(args.batch_size, dev_data, vocabulary_text, vocabulary_label).iterators
+test_iter = datasetswb.MyIterator(args.batch_size, test_data, vocabulary_text, vocabulary_label).iterators
 
 
 # load embedding
 m_embedding = None
 if args.use_embedding:
-    id2word = text_field.vocab.itos
-    # m_embedding = getEmbedding('./data/conj300d.pkl',
-    #                            './data/glove.sentiment.conj.pretrained.txt',
-    #                            id2word,
-    #                            'conj300d.pkl')
-    m_embedding = getEmbedding('./data/840b300dall.pkl',
-                               'D:/AI/embedding&corpus/glove.840B.300d.txt',
+    # id2word = text_field.vocab.itos
+    id2word = vocabulary_text.id2word
+    m_embedding = getEmbedding('./data/conj300d.pkl',
+                               './data/glove.sentiment.conj.pretrained.txt',
                                id2word,
-                               '840b300dall.pkl')
+                               'conj300d.pkl')
+    # m_embedding = getEmbedding('./data/840b300dall.pkl',
+    #                            'D:/AI/embedding&corpus/glove.840B.300d.txt',
+    #                            id2word,
+    #                            '840b300dall.pkl')
 
 
 # update args and print
-args.embed_num = len(text_field.vocab)
-args.class_num = len(label_field.vocab) - 1
+args.embed_num = len(vocabulary_text.word2id)
+args.class_num = args.label_num
 args.cuda = (not args.no_cuda) and torch.cuda.is_available()
 del args.no_cuda
 args.save_dir = os.path.join(args.save_dir, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
@@ -186,8 +176,9 @@ if args.cuda:
 assert m_model is not None
 
 if args.predict is not None:
-    label = train.predict(args.predict, m_model, text_field, label_field)
-    print('\n[Text]  {}[Label] {}\n'.format(args.predict, label))
+    # label = train.predict(args.predict, m_model, text_field, label_field)
+    # print('\n[Text]  {}[Label] {}\n'.format(args.predict, label))
+    pass
 elif args.test:
     try:
         train.eval(test_iter, m_model, args)
