@@ -15,7 +15,7 @@ class MR(data.Dataset):
 
     def __init__(self, text_field, label_field, path=None, examples=None, label5=False, **kwargs):
         def clean_str(string):
-            # string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
+            string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
             string = re.sub(r"\'s", " \'s", string)
             string = re.sub(r"\'ve", " \'ve", string)
             string = re.sub(r"n\'t", " n\'t", string)

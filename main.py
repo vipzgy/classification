@@ -28,8 +28,8 @@ parser.add_argument('-save-dir', type=str, default='snapshot')
 # data 
 parser.add_argument('-shuffle', action='store_true', default=True)
 # model
-parser.add_argument('-dropout-embed', type=float, default=0.6)
-parser.add_argument('-dropout-rnn', type=float, default=0.1)
+parser.add_argument('-dropout-embed', type=float, default=0.5)
+parser.add_argument('-dropout-rnn', type=float, default=0.2)
 
 parser.add_argument('-use-embedding', action='store_true', default=True)
 parser.add_argument('-max-norm', type=float, default=None)
@@ -42,7 +42,7 @@ parser.add_argument('-kernel-num', type=int, default=100)
 parser.add_argument('-kernel-sizes', type=str, default='3,4,5')
 parser.add_argument('-static', action='store_true', default=False)
 
-parser.add_argument('-which-model', type=str, default='lstm')
+parser.add_argument('-which-model', type=str, default='mylstm')
 # device
 parser.add_argument('-device', type=int, default=-1)
 parser.add_argument('-no-cuda', action='store_true', default=True)
@@ -123,14 +123,14 @@ train_iter, dev_iter, test_iter = mr(text_field, label_field,
 m_embedding = None
 if args.use_embedding:
     id2word = text_field.vocab.itos
-    m_embedding = getEmbedding('./data/conj300d.pkl',
-                               './data/glove.sentiment.conj.pretrained.txt',
-                               id2word,
-                               'conj300d.pkl')
     # m_embedding = getEmbedding('./data/conj300d.pkl',
     #                            './data/glove.sentiment.conj.pretrained.txt',
     #                            id2word,
     #                            'conj300d.pkl')
+    m_embedding = getEmbedding('./data/840b300dall.pkl',
+                               'D:/AI/embedding&corpus/glove.840B.300d.txt',
+                               id2word,
+                               '840b300dall.pkl')
 
 
 # update args and print
@@ -158,6 +158,8 @@ if args.snapshot is None:
         m_model = model.BIGRU(args, m_embedding)
     elif args.which_model == 'rnn':
         m_model = model.RNN(args, m_embedding)
+    elif args.which_model == 'birnn':
+        m_model = model.BIRNN(args, m_embedding)
     elif args.which_model == 'cnn':
         m_model = model.CNN(args, m_embedding)
     elif args.which_model == 'lstmCopyFromA7b23':

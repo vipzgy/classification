@@ -64,8 +64,9 @@ def splitcorpus(path, label_num=2, shuffle=True):
                 examples += Example.fromlist(line[:line.find('|')], 'negative')
             elif line[-2] == '3' or line[-2] == '4':
                 examples += Example.fromlist(line[:line.find('|')], 'positive')
-    # if shuffle:
-    #     examples = random.shuffle(examples)
+    if shuffle:
+        # examples = random.shuffle(examples)
+        pass
     return examples
 
 
@@ -120,15 +121,29 @@ class Batch:
 
     @classmethod
     def makeBatch(cls, item):
+        """
+        是不是也可以去平均值得长度。padding太多感觉会有问题
+        这个问题是不是世纪难题
+        填充1<padding>
+        """
         max_len = 0
         for i in item:
             if len(i[0]) > max_len:
                 max_len = len(i[0])
         text = []
         label = []
-        for i in
-
-
+        for i in item:
+            seq = []
+            for idx in range(max_len):
+                if idx < len(i[0]):
+                    seq.append(i[0][idx])
+                else:
+                    seq.append(1)
+            text.append(seq)
+            label.append(i[1][0])
+        # 转变成Variable
+        text = Variable(torch.LongTensor(text))
+        label = Variable(torch.LongTensor(label))
         return cls(text, label)
 
 
@@ -149,7 +164,7 @@ class MyIterator:
                 if word in vocabulary.word2id:
                     text.append(vocabulary.word2id[word])
                 else:
-                    # dev & test 的数据可能不在vocabulary中，填充1<unknown>
+                    # dev & test 的数据可能不在vocabulary中，填充0<unknown>
                     text.append(0)
             label.append(vocabulary.word2id[example.label])
             item.append((text, label))
@@ -157,8 +172,6 @@ class MyIterator:
             if count % batch_size == 0 or count == len(examples):
                 self.iterators.append(Batch.makeBatch(item))
                 item = []
-
-
 
 
 class MyDatasets:
@@ -181,24 +194,9 @@ class MyDatasets:
         batch_size = args
         iterator = MyIterator(batch_size, self.examples, m_vocabulary)
 
-        print("finish")
-
 
 if __name__ == "__main__":
     print('-----------')
     args = 64
     path = "./data/raw.clean.train"
     data = MyDatasets(args, path, 2)
-
-
-
-#
-# '''
-# 提取所有的单词
-# '''
-# def
-#
-# '''
-# 应该建立一个按照词频排序的表
-# '''
-# def makeVocabulary():
