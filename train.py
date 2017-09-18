@@ -12,7 +12,7 @@ def train(train_iter, dev_iter, test_iter, model, args):
     if args.cuda:
         model.cuda()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-8)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr,)# weight_decay=1e-8
 
     m_max = -99999
     whichmax = ''

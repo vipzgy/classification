@@ -18,8 +18,8 @@ torch.manual_seed(66)
 parser = argparse.ArgumentParser(description='classificer')
 # learning
 parser.add_argument('-lr', type=float, default=0.001)
-parser.add_argument('-epochs', type=int, default=8)
-parser.add_argument('-batch-size', type=int, default=16)
+parser.add_argument('-epochs', type=int, default=128)
+parser.add_argument('-batch-size', type=int, default=64)
 parser.add_argument('-log-interval', type=int, default=1)
 parser.add_argument('-test-interval', type=int, default=100)
 parser.add_argument('-save-interval', type=int, default=100)
@@ -27,8 +27,8 @@ parser.add_argument('-save-dir', type=str, default='snapshot')
 # data 
 parser.add_argument('-shuffle', action='store_true', default=True)
 # model
-parser.add_argument('-dropout-embed', type=float, default=0.6)
-parser.add_argument('-dropout-rnn', type=float, default=0.1)
+parser.add_argument('-dropout-embed', type=float, default=0.5)
+parser.add_argument('-dropout-rnn', type=float, default=0.5)
 
 parser.add_argument('-use-embedding', action='store_true', default=True)
 parser.add_argument('-max-norm', type=float, default=None)
@@ -37,11 +37,11 @@ parser.add_argument('-embed-dim', type=int, default=300)
 parser.add_argument('-input-size', type=int, default=300)
 parser.add_argument('-hidden-size', type=int, default=200)
 
-parser.add_argument('-kernel-num', type=int, default=100)
-parser.add_argument('-kernel-sizes', type=str, default='3,4,5')
+parser.add_argument('-kernel-num', type=int, default=50)
+parser.add_argument('-kernel-sizes', type=str, default='3')
 parser.add_argument('-static', action='store_true', default=False)
 
-parser.add_argument('-which-model', type=str, default='lstm')
+parser.add_argument('-which-model', type=str, default='rnntocnn')
 # device
 parser.add_argument('-device', type=int, default=-1)
 parser.add_argument('-no-cuda', action='store_true', default=True)
@@ -82,6 +82,7 @@ def getEmbedding(plk_path, embed_path, id2word, name):
             else:
                 notfound += 1
                 m_embed.append([round(random.uniform(-0.25, 0.25), 6) for i in range(args.embed_dim)])
+        print("length", len(id2word))
         print('notfound:', notfound)
         print('ratio:', notfound / len(id2word))
         m_embedding = torch.from_numpy(numpy.array(m_embed)).type(torch.DoubleTensor)
@@ -91,7 +92,7 @@ def getEmbedding(plk_path, embed_path, id2word, name):
         pickle.dump(m_embed, f)
         f.close()
 
-        k = m_embed[222]
+        # k = m_embed[222]
     return m_embedding
 
 
@@ -160,6 +161,9 @@ if args.snapshot is None:
         m_model = model.MyLSTM(args, m_embedding)
     elif args.which_model == "mybilstm":
         m_model = model.MyBILSTM(args, m_embedding)
+    elif args.which_model == "rnntocnn":
+        m_model = model.RNNtoCNN(args, m_embedding)
+
 
 else:
     print('\nLoading model from [%s]...' % args.snapshot)

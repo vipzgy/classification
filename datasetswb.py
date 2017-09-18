@@ -29,7 +29,8 @@ class Example:
 
 # 利用正则表达式处理每一句话
 def cleansequence(string):
-    # string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
+    string = string.lower()
+    string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
     string = re.sub(r"\'s", " \'s", string)
     string = re.sub(r"\'ve", " \'ve", string)
     string = re.sub(r"n\'t", " n\'t", string)
@@ -211,6 +212,12 @@ class MyDatasets:
         # 建立词表
         # 也没有必要非要在这里建立词表，也可以单写
         vocabulary_text = Vocabulary.makeVocabularyByText([self.examples])
+        output = open("D:/vocab.txt", "w+", encoding='utf-8')
+        for k in vocabulary_text.word2id:
+            output.write(k + '\n')
+            output.flush()
+        output.close()
+
         vocabulary_label = Vocabulary.makeVocabularyByLable([self.examples])
         """
         感觉这里必然会有一些问题存在

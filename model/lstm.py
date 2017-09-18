@@ -15,7 +15,7 @@ class LSTM(nn.Module):
         self.embed = nn.Embedding(args.embed_num, args.embed_dim, max_norm=args.max_norm)
         if args.use_embedding:
             self.embed.weight.data.copy_(m_embedding)
-        self.dropout = nn.Dropout(args.dropout_embed)
+        # self.dropout = nn.Dropout(args.dropout_embed)
 
         self.lstm = nn.LSTM(args.input_size, args.hidden_size, dropout=args.dropout_rnn, batch_first=True)
         # 使用Xavier初始化，也就这一个是有weight
@@ -32,7 +32,7 @@ class LSTM(nn.Module):
         hidden = (Variable(torch.zeros(1, x.size(0), self.args.hidden_size)),
                   Variable(torch.zeros(1, x.size(0), self.args.hidden_size)))
         x = self.embed(x)
-        x = self.dropout(x)
+        # x = self.dropout(x)
 
         x, lstm_h = self.lstm(x, hidden)
 
