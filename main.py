@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(description='classificer')
 # learning
 parser.add_argument('-lr', type=float, default=0.001)
 parser.add_argument('-epochs', type=int, default=128)
-parser.add_argument('-batch-size', type=int, default=64)
+parser.add_argument('-batch-size', type=int, default=16)
 parser.add_argument('-log-interval', type=int, default=1)
 parser.add_argument('-test-interval', type=int, default=100)
 parser.add_argument('-save-interval', type=int, default=100)
@@ -35,13 +35,13 @@ parser.add_argument('-max-norm', type=float, default=None)
 parser.add_argument('-embed-dim', type=int, default=300)
 
 parser.add_argument('-input-size', type=int, default=300)
-parser.add_argument('-hidden-size', type=int, default=200)
+parser.add_argument('-hidden-size', type=int, default=600)
 
 parser.add_argument('-kernel-num', type=int, default=50)
 parser.add_argument('-kernel-sizes', type=str, default='3')
 parser.add_argument('-static', action='store_true', default=False)
 
-parser.add_argument('-which-model', type=str, default='rnntocnn')
+parser.add_argument('-which-model', type=str, default='attention')
 # device
 parser.add_argument('-device', type=int, default=-1)
 parser.add_argument('-no-cuda', action='store_true', default=True)
@@ -50,7 +50,7 @@ parser.add_argument('-snapshot', type=str, default=None)
 parser.add_argument('-predict', type=str, default=None)
 parser.add_argument('-test', action='store_true', default=False)
 parser.add_argument('-label-num', type=int, default=2)
-parser.add_argument('-lr-scheduler', type=str, default="lambda")
+parser.add_argument('-lr-scheduler', type=str, default=None)
 parser.add_argument('-clip-norm', type=str, default=None)
 
 args = parser.parse_args()
@@ -105,8 +105,8 @@ test_data = datasetswb.splitcorpus("./data/raw.clean.test", args.label_num, args
 vocabulary_text = datasetswb.Vocabulary.makeVocabularyByText([train_data])
 vocabulary_label = datasetswb.Vocabulary.makeVocabularyByLable([train_data])
 train_iter = datasetswb.MyIterator(args.batch_size, train_data, vocabulary_text, vocabulary_label).iterators
-dev_iter = datasetswb.MyIterator(args.batch_size, dev_data, vocabulary_text, vocabulary_label).iterators
-test_iter = datasetswb.MyIterator(args.batch_size, test_data, vocabulary_text, vocabulary_label).iterators
+dev_iter = datasetswb.MyIterator(len(dev_data), dev_data, vocabulary_text, vocabulary_label).iterators
+test_iter = datasetswb.MyIterator(len(test_data), test_data, vocabulary_text, vocabulary_label).iterators
 
 
 # load embedding
@@ -163,7 +163,8 @@ if args.snapshot is None:
         m_model = model.MyBILSTM(args, m_embedding)
     elif args.which_model == "rnntocnn":
         m_model = model.RNNtoCNN(args, m_embedding)
-
+    elif args.which_model == "attention":
+        m_model = model.MyAttention(args, m_embedding)
 
 else:
     print('\nLoading model from [%s]...' % args.snapshot)

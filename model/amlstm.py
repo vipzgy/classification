@@ -5,39 +5,6 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 
-class MyAttentionCell(nn.Module):
-    def __init__(self, input_size, hidden_size, dropout_rnn=None, bias=True):
-        super(MyAttentionCell, self).__init__()
-        self.dropout = dropout_rnn
-
-        if bias is False:
-            self.linearf = nn.Linear(input_size + hidden_size, hidden_size, )
-            self.lineari = nn.Linear(input_size + hidden_size, hidden_size)
-            self.linearo = nn.Linear(input_size + hidden_size, hidden_size)
-            self.linearc = nn.Linear(input_size + hidden_size, hidden_size)
-        else:
-            self.linearf = nn.Linear(input_size + hidden_size, hidden_size, bias=True)
-            self.lineari = nn.Linear(input_size + hidden_size, hidden_size, bias=True)
-            self.linearo = nn.Linear(input_size + hidden_size, hidden_size, bias=True)
-            self.linearc = nn.Linear(input_size + hidden_size, hidden_size, bias=True)
-
-        self.dropout = nn.Dropout(dropout_rnn)
-
-    def forward(self, xt, ht_pro, ct_pro):
-        ft = F.sigmoid(self.linearf(torch.cat([xt, ht_pro], 1)))
-        it = F.sigmoid(self.lineari(torch.cat([xt, ht_pro], 1)))
-        c_t = F.tanh(self.linearc(torch.cat([xt, ht_pro], 1)))
-        ot = F.sigmoid(self.linearo(torch.cat([xt, ht_pro], 1)))
-
-        ct = torch.mul(ft, c_t) + torch.mul(it, c_t)
-        ht = torch.mul(ot, F.tanh(ct))
-
-        if self.dropout is not None:
-            ht = self.dropout(ht)
-            ct = self.dropout(ct)
-        return ht, ct
-
-
 class MyAttention(nn.Module):
     def __init__(self, args, m_embedding):
         super(MyAttention, self).__init__()
@@ -49,18 +16,44 @@ class MyAttention(nn.Module):
 
         self.lstm = nn.LSTM(args.input_size, args.hidden_size, dropout=args.dropout_rnn, batch_first=True)
 
+        self.myw = Variable(torch.randn(args.hidden_size, 1))
+
         self.linearOut = nn.Linear(args.hidden_size, args.class_num)
 
     def forward(self, x):
-        # hidden = Variable(torch.zeros(2, x.size(0), self.args.hidden_size))
-        hidden = (Variable(torch.zeros(1, x.size(0), self.args.hidden_size)),
-                  Variable(torch.zeros(1, x.size(0), self.args.hidden_size)))
         x = self.embed(x)
-        # x = self.dropout(x)
 
-        x, lstm_h = self.lstm(x, hidden)
+        x, lstm_h = self.lstm(x)
 
-        x = F.tanh(torch.transpose(x, 1, 2))
-        x = F.max_pool1d(x, x.size(2)).squeeze(2)
-        x = self.linearOut(x)
+        x = torch.transpose(x, 0, 1)
+
+        for idx in range(x.size(0)):
+            tem = torch.mm(x[idx], self.myw)
+            tem = torch.exp(F.tanh(tem))
+            if idx == 0:
+                probability = tem
+            else:
+                probability = torch.cat([probability, tem], 1)
+        max = []
+        for idx in range(probability.size(0)):
+            max_value = -1
+            max_id = -1
+            for idj in range(probability.size(1)):
+                if probability.data[idx][idj] > max_value:
+                    max_id = idj
+                    max_value = probability.data[idx][idj]
+            max.append(max_id)
+
+        x = torch.transpose(x, 0, 1)
+
+        for idx in range(x.size(0)):
+            if idx == 0:
+                output = torch.unsqueeze(x[idx][max[idx]], 0)
+            else:
+                output = torch.cat([output, torch.unsqueeze(x[idx][max[idx]], 0)], 0)
+        """
+        留个坑，想知道自己选的到底是一句话中的哪一个单词
+        """
+
+        x = self.linearOut(output)
         return x
