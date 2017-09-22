@@ -27,21 +27,21 @@ parser.add_argument('-save-dir', type=str, default='snapshot')
 # data 
 parser.add_argument('-shuffle', action='store_true', default=True)
 # model
-parser.add_argument('-dropout-embed', type=float, default=0.5)
-parser.add_argument('-dropout-rnn', type=float, default=0.5)
+parser.add_argument('-dropout-embed', type=float, default=0.6)
+parser.add_argument('-dropout-rnn', type=float, default=0.2)
 
 parser.add_argument('-use-embedding', action='store_true', default=True)
 parser.add_argument('-max-norm', type=float, default=None)
 parser.add_argument('-embed-dim', type=int, default=300)
 
 parser.add_argument('-input-size', type=int, default=300)
-parser.add_argument('-hidden-size', type=int, default=600)
+parser.add_argument('-hidden-size', type=int, default=400)
 
-parser.add_argument('-kernel-num', type=int, default=50)
+parser.add_argument('-kernel-num', type=int, default=200)
 parser.add_argument('-kernel-sizes', type=str, default='3')
 parser.add_argument('-static', action='store_true', default=False)
 
-parser.add_argument('-which-model', type=str, default='attention')
+parser.add_argument('-which-model', type=str, default='lstmattention')
 # device
 parser.add_argument('-device', type=int, default=-1)
 parser.add_argument('-no-cuda', action='store_true', default=True)
@@ -58,18 +58,20 @@ args = parser.parse_args()
 
 # create embedding
 def getEmbedding(plk_path, embed_path, id2word, name):
-    if os.path.exists(plk_path):
 
+    # 如果这个词向量已经保存为pkl了，就直接加载
+    if os.path.exists(plk_path):
         plk_f = open(plk_path, 'rb+')
         m_embed = pickle.load(plk_f)
         m_embedding = torch.from_numpy(numpy.array(m_embed)).type(torch.DoubleTensor)
         plk_f.close()
     else:
+        # 如果没有找到pkl，就从已经筛选好的词向量里去找
         assert os.path.exists(embed_path)
         embed_f = open(embed_path, encoding="utf-8")
         m_dict = {}
         for idx, line in enumerate(embed_f.readlines()):
-            if not (idx == 0 or line == ''):
+            if not line == '':
                 strs = line.split(' ')
                 m_dict[strs[0]] = [float(i) for idx2, i in enumerate(strs) if not idx2 == 0]
         embed_f.close()
@@ -82,7 +84,6 @@ def getEmbedding(plk_path, embed_path, id2word, name):
             else:
                 notfound += 1
                 m_embed.append([round(random.uniform(-0.25, 0.25), 6) for i in range(args.embed_dim)])
-        print("length", len(id2word))
         print('notfound:', notfound)
         print('ratio:', notfound / len(id2word))
         m_embedding = torch.from_numpy(numpy.array(m_embed)).type(torch.DoubleTensor)
@@ -91,8 +92,6 @@ def getEmbedding(plk_path, embed_path, id2word, name):
         # pickle.dump(id2word, f)
         pickle.dump(m_embed, f)
         f.close()
-
-        # k = m_embed[222]
     return m_embedding
 
 
@@ -102,8 +101,10 @@ print("\nLoading data...")
 train_data = datasetswb.splitcorpus("./data/raw.clean.train", args.label_num, args.shuffle)
 dev_data = datasetswb.splitcorpus("./data/raw.clean.dev", args.label_num, args.shuffle)
 test_data = datasetswb.splitcorpus("./data/raw.clean.test", args.label_num, args.shuffle)
+
 vocabulary_text = datasetswb.Vocabulary.makeVocabularyByText([train_data])
 vocabulary_label = datasetswb.Vocabulary.makeVocabularyByLable([train_data])
+
 train_iter = datasetswb.MyIterator(args.batch_size, train_data, vocabulary_text, vocabulary_label).iterators
 dev_iter = datasetswb.MyIterator(len(dev_data), dev_data, vocabulary_text, vocabulary_label).iterators
 test_iter = datasetswb.MyIterator(len(test_data), test_data, vocabulary_text, vocabulary_label).iterators
@@ -112,16 +113,15 @@ test_iter = datasetswb.MyIterator(len(test_data), test_data, vocabulary_text, vo
 # load embedding
 m_embedding = None
 if args.use_embedding:
-    # id2word = text_field.vocab.itos
     id2word = vocabulary_text.id2word
-    m_embedding = getEmbedding('./data/conj300d.pkl',
-                               './data/glove.sentiment.conj.pretrained.txt',
-                               id2word,
-                               'conj300d.pkl')
-    # m_embedding = getEmbedding('./data/840b300dall.pkl',
-    #                            'D:/AI/embedding&corpus/glove.840B.300d.txt',
+    # m_embedding = getEmbedding('./data/conj300d.pkl',
+    #                            './data/glove.sentiment.conj.pretrained.txt',
     #                            id2word,
-    #                            '840b300dall.pkl')
+    #                            'conj300d.pkl')
+    m_embedding = getEmbedding('./data/840b300d.pkl',
+                               'D:/AI/embedding&corpus/glove300d.txt',
+                               id2word,
+                               '840b300d.pkl')
 
 
 # update args and print
@@ -163,8 +163,8 @@ if args.snapshot is None:
         m_model = model.MyBILSTM(args, m_embedding)
     elif args.which_model == "rnntocnn":
         m_model = model.RNNtoCNN(args, m_embedding)
-    elif args.which_model == "attention":
-        m_model = model.MyAttention(args, m_embedding)
+    elif args.which_model == "lstmattention":
+        m_model = model.LSTMAttention(args, m_embedding)
 
 else:
     print('\nLoading model from [%s]...' % args.snapshot)

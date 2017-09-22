@@ -6,7 +6,8 @@ from .copyfroma7b23 import LSTMCopyFromA7b23
 from .convolution_lstm import ConvLSTM
 from .mylstm import MyLSTM, MyBILSTM
 from .rnntocnn import RNNtoCNN
-from .amlstm import MyAttention
+from .attentionlstm import LSTMAttention
+from .attentioncnn import CNNAttention
 
 __all__ = ["GRU", "BIGRU",
            "LSTM", "BILSTM",
@@ -15,4 +16,4 @@ __all__ = ["GRU", "BIGRU",
            "LSTMCopyFromA7b23", "ConvLSTM",
            "MyLSTM", "MyBILSTM",
            "RNNTOCNN",
-           "MyAttention"]
+           "LSTMAttention", "CNNAttention"]

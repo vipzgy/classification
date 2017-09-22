@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
+import os
 import random
 import torch
 from torch.autograd import Variable
@@ -105,6 +106,30 @@ class Vocabulary:
             """
             id2word[idx + 2] = word[0]
             word2id[word[0]] = idx + 2
+        """在这里可以加上提取有用的词向量的操作
+        但是整体的架构如何设计一下呢？？？？？？
+        """
+        # save_dir = "D:/AI/embedding&corpus"
+        # assert os.path.isdir(save_dir)
+        # output = open(os.path.join(save_dir, "glove300d.txt"), "w+", encoding='utf-8')
+        # with open("D:/AI/embedding&corpus/glove.840B.300d.txt", encoding="utf-8") as f:
+        #     hang = 0
+        #     count = 0
+        #     find = 0
+        #     for line in f:
+        #         if hang == 0 or line == "":
+        #             hang += 1
+        #         else:
+        #             line = line.strip()
+        #             strs = line.split(' ')
+        #             if strs[0] in word2id:
+        #                 output.write(line + '\n')
+        #                 output.flush()
+        #                 find += 1
+        #             count += 1
+        # output.close()
+        # print("find:", find)
+        # print("all:", count)
         return cls(id2word, word2id)
 
     @classmethod
