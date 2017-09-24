@@ -56,10 +56,10 @@ class BILSTM(nn.Module):
                             batch_first=True,
                             bidirectional=True)
         # 使用Xavier初始化，也就这一个是有weight
-        # nn.init.xavier_normal(self.lstm.all_weights[0][0], 1)
-        # nn.init.xavier_normal(self.lstm.all_weights[0][1], 1)
-        # nn.init.xavier_normal(self.lstm.all_weights[1][0], 1)
-        # nn.init.xavier_normal(self.lstm.all_weights[1][1], 1)
+        # nn.init.xavier_normal(self.lstm.all_weights[0][0])
+        # nn.init.xavier_normal(self.lstm.all_weights[0][1])
+        # nn.init.xavier_normal(self.lstm.all_weights[1][0])
+        # nn.init.xavier_normal(self.lstm.all_weights[1][1])
 
         self.linearOut = nn.Linear(args.hidden_size * 2, args.class_num)
         # nn.init.xavier_normal(self.linearOut.weight, 1)

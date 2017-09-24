@@ -20,8 +20,14 @@ class LSTMAttention(nn.Module):
                             bidirectional=True,
                             batch_first=True,
                             dropout=args.dropout_rnn)
+        nn.init.kaiming_uniform(self.lstm.all_weights[0][0])
+        nn.init.kaiming_uniform(self.lstm.all_weights[0][1])
+        nn.init.kaiming_uniform(self.lstm.all_weights[1][0])
+        nn.init.kaiming_uniform(self.lstm.all_weights[1][1])
 
         self.myw = Variable(torch.randn(args.hidden_size * 2, 1))
+
+        # self.mybias = Variable(torch.randn(args.hidden_size * 2, 1))
 
         self.linear1 = nn.Linear(args.hidden_size * 2, args.hidden_size)
 
@@ -74,13 +80,9 @@ class LSTMAttention(nn.Module):
 
         for idx in range(probability.size(0)):
             if idx == 0:
-                output = torch.mm(torch.unsqueeze(probability[idx], 0), x[idx])
+                output = torch.mm(torch.unsqueeze(probability[idx], 0)/all_score[idx], x[idx])
             else:
-                output = torch.cat([output, torch.mm(torch.unsqueeze(probability[idx], 0), x[idx])], 0)
-
-        """
-        留个坑，想知道自己选的到底是一句话中的哪一个单词
-        """
+                output = torch.cat([output, torch.mm(torch.unsqueeze(probability[idx], 0)/all_score[idx], x[idx])], 0)
 
         x = self.linear1(output)
         x = self.linear2(x)

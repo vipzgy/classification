@@ -28,14 +28,14 @@ parser.add_argument('-save-dir', type=str, default='snapshot')
 parser.add_argument('-shuffle', action='store_true', default=True)
 # model
 parser.add_argument('-dropout-embed', type=float, default=0.6)
-parser.add_argument('-dropout-rnn', type=float, default=0.2)
+parser.add_argument('-dropout-rnn', type=float, default=0.3)
 
 parser.add_argument('-use-embedding', action='store_true', default=True)
 parser.add_argument('-max-norm', type=float, default=None)
 parser.add_argument('-embed-dim', type=int, default=300)
 
 parser.add_argument('-input-size', type=int, default=300)
-parser.add_argument('-hidden-size', type=int, default=400)
+parser.add_argument('-hidden-size', type=int, default=160)
 
 parser.add_argument('-kernel-num', type=int, default=200)
 parser.add_argument('-kernel-sizes', type=str, default='3')
@@ -50,8 +50,8 @@ parser.add_argument('-snapshot', type=str, default=None)
 parser.add_argument('-predict', type=str, default=None)
 parser.add_argument('-test', action='store_true', default=False)
 parser.add_argument('-label-num', type=int, default=2)
-parser.add_argument('-lr-scheduler', type=str, default=None)
-parser.add_argument('-clip-norm', type=str, default=None)
+parser.add_argument('-lr-scheduler', type=str, default="lambda")
+parser.add_argument('-clip-norm', type=str, default=5)
 
 args = parser.parse_args()
 
