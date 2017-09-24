@@ -4,6 +4,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+torch.manual_seed(66)
+
 
 class LSTMAttention(nn.Module):
     def __init__(self, args, m_embedding):
@@ -25,7 +27,7 @@ class LSTMAttention(nn.Module):
         nn.init.kaiming_uniform(self.lstm.all_weights[1][0])
         nn.init.kaiming_uniform(self.lstm.all_weights[1][1])
 
-        self.myw = Variable(torch.randn(args.hidden_size * 2, 1))
+        self.myw = Variable(torch.randn(args.hidden_size * 2, 1), requires_grad=True)
 
         # self.mybias = Variable(torch.randn(args.hidden_size * 2, 1))
 
