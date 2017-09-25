@@ -37,7 +37,7 @@ class GRUAttention(nn.Module):
         self.linear2 = nn.Linear(args.hidden_size, args.class_num)
         nn.init.kaiming_uniform(self.linear2.weight)
 
-    def forward(self, x, start):
+    def forward(self, x):
         x = self.embed(x)
 
         x = self.dropout(x)
@@ -69,6 +69,4 @@ class GRUAttention(nn.Module):
         """
         把结果输出看一下把
         """
-        if start:
-            f = open("d:/result.txt")
         return x
