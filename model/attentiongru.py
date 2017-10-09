@@ -25,16 +25,16 @@ class GRUAttention(nn.Module):
         nn.init.kaiming_uniform(self.gru.all_weights[1][0])
         nn.init.kaiming_uniform(self.gru.all_weights[1][1])
 
-        self.linear0 = nn.Linear(args.hidden_size * 2, args.hidden_size * 2)
+        self.linear0 = nn.Linear(args.hidden_size * 2, args.hidden_size * 2, bias=True)
         nn.init.kaiming_uniform(self.linear0.weight)
 
         self.myw = Variable(torch.randn(args.hidden_size * 2, 1), requires_grad=True)
         nn.init.kaiming_uniform(self.myw)
 
-        self.linear1 = nn.Linear(args.hidden_size * 2, args.hidden_size)
+        self.linear1 = nn.Linear(args.hidden_size * 2, args.hidden_size, bias=True)
         nn.init.kaiming_uniform(self.linear1.weight)
 
-        self.linear2 = nn.Linear(args.hidden_size, args.class_num)
+        self.linear2 = nn.Linear(args.hidden_size, args.class_num, bias=True)
         nn.init.kaiming_uniform(self.linear2.weight)
 
     def forward(self, x):
@@ -49,7 +49,8 @@ class GRUAttention(nn.Module):
         for idx in range(x.size(0)):
             tem = self.linear0(x[idx])
             tem = torch.mm(tem, self.myw)
-            tem = torch.exp(F.tanh(tem))
+            tem = torch.exp(tem)
+            # tem = torch.exp(F.tanh(tem))
             if idx == 0:
                 probability = tem
             else:

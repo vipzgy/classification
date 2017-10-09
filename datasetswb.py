@@ -8,7 +8,7 @@ from torch.autograd import Variable
 random.seed(66)
 
 
-class Example:
+class Example(object):
     """
     生成每一句语料的
     []list 加上一个 []标签
@@ -237,11 +237,11 @@ class MyDatasets:
         # 建立词表
         # 也没有必要非要在这里建立词表，也可以单写
         vocabulary_text = Vocabulary.makeVocabularyByText([self.examples])
-        output = open("D:/vocab.txt", "w+", encoding='utf-8')
-        for k in vocabulary_text.word2id:
-            output.write(k + '\n')
-            output.flush()
-        output.close()
+        # output = open("D:/vocab.txt", "w+", encoding='utf-8')
+        # for k in vocabulary_text.word2id:
+        #     output.write(k + '\n')
+        #     output.flush()
+        # output.close()
 
         vocabulary_label = Vocabulary.makeVocabularyByLable([self.examples])
         """
