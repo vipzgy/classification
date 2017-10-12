@@ -101,6 +101,9 @@ class MyBILSTM(nn.Module):
 
         h_i = Variable(torch.zeros(x.size(1), self.args.hidden_size))
         c_i = Variable(torch.zeros(x.size(1), self.args.hidden_size))
+        if self.args.cuda:
+            h_i.cuda()
+            c_i.cuda()
 
         for idx in range(x.size(0)):
             input_cell = x[idx]
@@ -112,6 +115,10 @@ class MyBILSTM(nn.Module):
 
         h_i = Variable(torch.zeros(x.size(1), self.args.hidden_size))
         c_i = Variable(torch.zeros(x.size(1), self.args.hidden_size))
+        if self.args.cuda:
+            h_i.cuda()
+            c_i.cuda()
+
         idx = x.size(0) - 1
         while idx >= 0:
             input_cell = x[idx]
