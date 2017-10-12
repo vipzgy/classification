@@ -41,7 +41,7 @@ parser.add_argument('-kernel-num', type=int, default=200)
 parser.add_argument('-kernel-sizes', type=str, default='3')
 parser.add_argument('-static', action='store_true', default=False)
 
-parser.add_argument('-which-model', type=str, default='gruattention')
+parser.add_argument('-which-model', type=str, default='mybilstm')
 # device
 parser.add_argument('-device', type=int, default=-1)
 parser.add_argument('-no-cuda', action='store_true', default=True)
@@ -192,5 +192,5 @@ elif args.test:
     except Exception as e:
         print("\nSorry. The test dataset doesn't  exist.\n")
 else:
-    torch.set_num_threads(3)
+    torch.set_num_threads(1)
     train.train(train_iter, dev_iter, test_iter, m_model, args)
